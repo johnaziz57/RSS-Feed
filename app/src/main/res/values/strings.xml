@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">RSS-Feed</string>
+    <string name="app_name">BBC RSS-Feed</string>
     <string name="title_newsitem_detail">NewsItem Detail</string>
 </resources>

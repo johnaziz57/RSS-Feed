@@ -1,24 +1,29 @@
 package com.john_aziz57.rss_feed.ui.activity;
 
+import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.Loader;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 
+import com.bumptech.glide.Glide;
+import com.john_aziz57.rss_feed.data.loader.RssTaskLoader;
+import com.john_aziz57.rss_feed.data.model.NewsItem;
+import com.john_aziz57.rss_feed.data.model.RSS;
 import com.john_aziz57.rss_feed.ui.fragment.NewsItemDetailFragment;
 import com.john_aziz57.rss_feed.R;
-import com.john_aziz57.rss_feed.dummy.DummyContent;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -29,13 +34,16 @@ import java.util.List;
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-public class NewsItemListActivity extends AppCompatActivity {
+public class NewsItemListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<RSS>{
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
+    private static final int RSS_ID=1;
+
     private boolean mTwoPane;
+    private SimpleItemRecyclerViewAdapter mSimpleAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,15 +53,6 @@ public class NewsItemListActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
 
         View recyclerView = findViewById(R.id.newsitem_list);
         assert recyclerView != null;
@@ -66,19 +65,36 @@ public class NewsItemListActivity extends AppCompatActivity {
             // activity should be in two-pane mode.
             mTwoPane = true;
         }
+        final LoaderManager loaderManager = getLoaderManager();
+        loaderManager.initLoader(RSS_ID,null,this).forceLoad();
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(DummyContent.ITEMS));
+        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(new LinkedList<NewsItem>()));
+    }
+
+    @Override
+    public Loader<RSS> onCreateLoader(int i, Bundle bundle) {
+        return new RssTaskLoader(this);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<RSS> loader, RSS rss) {
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<RSS> loader) {
+
     }
 
     public class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
-        private final List<DummyContent.DummyItem> mValues;
+        private final List<NewsItem> mNewsItemList;
 
-        public SimpleItemRecyclerViewAdapter(List<DummyContent.DummyItem> items) {
-            mValues = items;
+        public SimpleItemRecyclerViewAdapter(List<NewsItem> items) {
+            mNewsItemList = items;
         }
 
         @Override
@@ -90,16 +106,25 @@ public class NewsItemListActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mItem = mValues.get(position);
-            holder.mIdView.setText(mValues.get(position).id);
-            holder.mContentView.setText(mValues.get(position).content);
+            final NewsItem newsItem = mNewsItemList.get(position);
+
+            holder.mTitleView.setText(newsItem.title);
+            holder.mPubDateView.setText(newsItem.pubDate);
+
+            /*if image link does exist, load it into the circular imageView*/
+            if(newsItem.thumbnail!=null)
+                Glide
+                        .with(NewsItemListActivity.this)
+                        .load(newsItem.thumbnail.url)
+                        .asBitmap()
+                        .into(holder.mImageView);
 
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mTwoPane) {
                         Bundle arguments = new Bundle();
-                        arguments.putString(NewsItemDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+                        arguments.putParcelable(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
                         NewsItemDetailFragment fragment = new NewsItemDetailFragment();
                         fragment.setArguments(arguments);
                         getSupportFragmentManager().beginTransaction()
@@ -108,7 +133,7 @@ public class NewsItemListActivity extends AppCompatActivity {
                     } else {
                         Context context = v.getContext();
                         Intent intent = new Intent(context, NewsItemDetailActivity.class);
-                        intent.putExtra(NewsItemDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+                        intent.putExtra(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
 
                         context.startActivity(intent);
                     }
@@ -118,25 +143,24 @@ public class NewsItemListActivity extends AppCompatActivity {
 
         @Override
         public int getItemCount() {
-            return mValues.size();
+            return mNewsItemList.size();
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
-            public final TextView mIdView;
-            public final TextView mContentView;
-            public DummyContent.DummyItem mItem;
+            public final TextView mTitleView;
+            public final TextView mPubDateView;
+            public final ImageView mImageView;
 
             public ViewHolder(View view) {
                 super(view);
                 mView = view;
-                mIdView = (TextView) view.findViewById(R.id.id);
-                mContentView = (TextView) view.findViewById(R.id.content);
-            }
-
-            @Override
-            public String toString() {
-                return super.toString() + " '" + mContentView.getText() + "'";
+                /*News title textView*/
+                mTitleView = (TextView) view.findViewById(R.id.title_textview);
+                /*News description textView*/
+                mPubDateView = (TextView) view.findViewById(R.id.pubdate_textview);
+                /*News Image*/
+                mImageView = (ImageView) view.findViewById(R.id.image_imageview);
             }
         }
     }
