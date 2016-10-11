@@ -10,8 +10,8 @@ import retrofit2.http.GET;
  */
 
 public interface RssService {
-    String RSS_URL = "http://feeds.bbci.co.uk/news/rss.xml";
+    String RSS_URL = "http://feeds.bbci.co.uk/news/";
 
-    @GET
+    @GET("rss.xml")
     Call<RSS> getRSS();
 }

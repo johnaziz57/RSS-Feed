@@ -7,9 +7,10 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Root;
 
 /**
+ * Implements Parcelable to be passed from activity to another
  * Created by John on 11-Oct-16.
  */
-@Root
+@Root(strict = false)
 public class MediaThumbnail implements Parcelable{
     /*mage width*/
     @Attribute
@@ -20,6 +21,8 @@ public class MediaThumbnail implements Parcelable{
     /*image url*/
     @Attribute
     public String url;
+    /*Public constructor for SimpleXMLConversion*/
+    public MediaThumbnail(){}
 
     protected MediaThumbnail(Parcel in) {
         width = in.readInt();

@@ -6,7 +6,7 @@ import org.simpleframework.xml.Root;
 /**
  * Created by John on 11-Oct-16.
  */
-@Root
+@Root(strict=false)
 public class RSS {
     @Element
     public Channel channel;

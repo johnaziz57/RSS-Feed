@@ -43,6 +43,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     private static final int RSS_ID=1;
 
     private boolean mTwoPane;
+    /*SimpleAdapter of RecyvlerView reference to dynamically add items to it and refresh the view*/
     private SimpleItemRecyclerViewAdapter mSimpleAdapter;
 
     @Override
@@ -70,7 +71,8 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(new LinkedList<NewsItem>()));
+        mSimpleAdapter = new SimpleItemRecyclerViewAdapter(new LinkedList<NewsItem>());
+        recyclerView.setAdapter(mSimpleAdapter);
     }
 
     @Override
@@ -80,7 +82,11 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
     @Override
     public void onLoadFinished(Loader<RSS> loader, RSS rss) {
-
+        //TODO handle swipe end refesh
+        if(rss!=null){
+            mSimpleAdapter.clear();
+            mSimpleAdapter.addItems(rss);
+        }
     }
 
     @Override
@@ -139,6 +145,24 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
                     }
                 }
             });
+        }
+        /*Add items directly from RSS*/
+        public void addItems(RSS rss){
+            if(rss!=null && rss.channel!=null)
+                addItems(rss.channel.list);
+        }
+
+        /*Add items from list*/
+        public void addItems(List<NewsItem> newsItemList){
+            mNewsItemList.addAll(newsItemList);
+            //notify changes
+            notifyDataSetChanged();
+        }
+
+        /*Clear the adapter and notify the dataset */
+        public void clear(){
+            mNewsItemList.clear();
+            notifyDataSetChanged();
         }
 
         @Override

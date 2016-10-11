@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Created by John on 11-Oct-16.
  */
-@Root
+@Root(strict = false)
 public class Channel {
     /*news items in an inline list*/
     @ElementList(entry = "item" , inline = true)

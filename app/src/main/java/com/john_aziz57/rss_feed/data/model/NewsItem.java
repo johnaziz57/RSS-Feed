@@ -8,9 +8,10 @@ import org.simpleframework.xml.Namespace;
 import org.simpleframework.xml.Root;
 
 /**
+ * Implements Parcelable to be passed between activities and fragments etc...
  * Created by John on 11-Oct-16.
  */
-@Root
+@Root(strict = false)
 public class NewsItem implements Parcelable{
     @Element
     public String title;
@@ -22,11 +23,13 @@ public class NewsItem implements Parcelable{
     public String guid;
     @Element
     public String pubDate;
-
     /*the object the hold the image*/
-    @Element
-    @Namespace
+    @Element (required = false)
+    @Namespace(prefix = "media")
     public MediaThumbnail thumbnail;
+
+    /*Public constructor for SimpleXMLConversion*/
+    public NewsItem(){}
 
     protected NewsItem(Parcel in) {
         title = in.readString();
