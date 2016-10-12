@@ -13,6 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -87,18 +88,22 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
 
         final LoaderManager loaderManager = getLoaderManager();
+        // start the loader to fetch data
         loaderManager.initLoader(RSS_ID,null,this).forceLoad();
+
+        //setup swipe to refresh container
         mSwipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
         mSwipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mSwipeContainer.setRefreshing( true );
-                loaderManager.initLoader(RSS_ID,null,NewsItemListActivity.this).forceLoad();
+                // on refresh load the data
+                loaderManager.restartLoader(RSS_ID,null,NewsItemListActivity.this).forceLoad();
             }
         });
 
         mSwipeContainer.setColorSchemeResources(R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent);
-        // we are already loading the data, don't refresh
+
+        // disable swipe to refresh because we are already loading the data, don't refresh
         mSwipeContainer.setEnabled(false);
     }
 
@@ -114,6 +119,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
     @Override
     public void onLoadFinished(Loader<RSS> loader, RSS rss) {
+        // hide the progressbar
         mProgressBar.setVisibility(View.GONE);
         // stop the refreshing sign
         mSwipeContainer.setRefreshing(false);
@@ -121,10 +127,14 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         mSwipeContainer.setEnabled(true);
 
         if(rss!=null){
+            // clear all the old data
             mSimpleAdapter.clear();
+            // add the new data
             mSimpleAdapter.addItems(rss);
+            // display the list
             mRecyclerView.setVisibility(View.VISIBLE);
         }else{
+            // notify the user that we have connection problem
             mNoDataTextView.setVisibility(View.VISIBLE);
         }
     }
@@ -216,9 +226,9 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
         public class ViewHolder extends RecyclerView.ViewHolder {
             public final View mView;
-            public final TextView mTitleView;
-            public final TextView mPubDateView;
-            public final ImageView mImageView;
+            public final TextView mTitleView;// news title
+            public final TextView mPubDateView;// publish date
+            public final ImageView mImageView; // Image associated with the news
 
             public ViewHolder(View view) {
                 super(view);

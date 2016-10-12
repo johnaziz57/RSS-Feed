@@ -28,12 +28,14 @@ public class RssTaskLoader extends AsyncTaskLoader<RSS> {
         Log.v("RSS","Start Loading");
         RssService rssService = RetrofitManager.getInstance().create(RssService.class);
         Call<RSS> call = rssService.getRSS();
+        RSS rss = null;
         try {
-            RSS rss = call.execute().body();
-            return rss;
+            rss = call.execute().body();
         }catch(IOException e){
             Log.e("RSS",e.getMessage());
         }
-        return null;
+        finally{
+            return rss;
+        }
     }
 }
