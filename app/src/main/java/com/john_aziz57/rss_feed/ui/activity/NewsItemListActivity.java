@@ -6,13 +6,16 @@ import android.content.Intent;
 import android.content.Loader;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
@@ -45,6 +48,18 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     private boolean mTwoPane;
     /*SimpleAdapter of RecyvlerView reference to dynamically add items to it and refresh the view*/
     private SimpleItemRecyclerViewAdapter mSimpleAdapter;
+    private RecyclerView mRecyclerView;
+    /* When there is no internet connection use this textView to display warning*/
+    private TextView mNoDataTextView;
+    /*loading progress bar*/
+    private ProgressBar mProgressBar;
+    /*the layout holding the detail fragment during tablet view*/
+    private FrameLayout mFrameLayout;
+    /*the textview asking the user to select a topic during tablet view*/
+    private TextView mPleaseSelectTextView;
+    /*swipe to refresh view for the recyclerView*/
+    private SwipeRefreshLayout mSwipeContainer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,19 +70,36 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
 
-        View recyclerView = findViewById(R.id.newsitem_list);
-        assert recyclerView != null;
-        setupRecyclerView((RecyclerView) recyclerView);
-
+        mRecyclerView = (RecyclerView)findViewById(R.id.newsitem_list);
+        assert mRecyclerView  != null;
+        setupRecyclerView( mRecyclerView );
         if (findViewById(R.id.newsitem_detail_container) != null) {
             // The detail container view will be present only in the
             // large-screen layouts (res/values-w900dp).
             // If this view is present, then the
             // activity should be in two-pane mode.
             mTwoPane = true;
+            mFrameLayout = (FrameLayout) findViewById(R.id.newsitem_detail_container);
+            mPleaseSelectTextView = (TextView) findViewById(R.id.please_select_textview);
         }
+
+        mNoDataTextView = (TextView) findViewById(R.id.no_data_textview);
+        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+
         final LoaderManager loaderManager = getLoaderManager();
         loaderManager.initLoader(RSS_ID,null,this).forceLoad();
+        mSwipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
+        mSwipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                mSwipeContainer.setRefreshing( true );
+                loaderManager.initLoader(RSS_ID,null,NewsItemListActivity.this).forceLoad();
+            }
+        });
+
+        mSwipeContainer.setColorSchemeResources(R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent);
+        // we are already loading the data, don't refresh
+        mSwipeContainer.setEnabled(false);
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
@@ -82,16 +114,23 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
     @Override
     public void onLoadFinished(Loader<RSS> loader, RSS rss) {
-        //TODO handle swipe end refesh
+        mProgressBar.setVisibility(View.GONE);
+        // stop the refreshing sign
+        mSwipeContainer.setRefreshing(false);
+        //allow swipe to refresh
+        mSwipeContainer.setEnabled(true);
+
         if(rss!=null){
             mSimpleAdapter.clear();
             mSimpleAdapter.addItems(rss);
+            mRecyclerView.setVisibility(View.VISIBLE);
+        }else{
+            mNoDataTextView.setVisibility(View.VISIBLE);
         }
     }
 
     @Override
     public void onLoaderReset(Loader<RSS> loader) {
-
     }
 
     public class SimpleItemRecyclerViewAdapter
@@ -129,6 +168,11 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
                 @Override
                 public void onClick(View v) {
                     if (mTwoPane) {
+                        //hide the textView notice
+                        mPleaseSelectTextView.setVisibility(View.GONE);
+                        //display the framelayout for the fragment
+                        mFrameLayout.setVisibility(View.VISIBLE);
+
                         Bundle arguments = new Bundle();
                         arguments.putParcelable(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
                         NewsItemDetailFragment fragment = new NewsItemDetailFragment();

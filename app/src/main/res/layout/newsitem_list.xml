@@ -1,13 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+
+
+<android.support.v4.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/newsitem_list"
-    android:name="com.john_aziz57.rss_feed.NewsItemListFragment"
+    android:id="@+id/swipeContainer"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_marginLeft="16dp"
-    android:layout_marginRight="16dp"
-    app:layoutManager="LinearLayoutManager"
-    tools:context="com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity"
-    tools:listitem="@layout/newsitem_list_content" />
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/newsitem_list"
+            android:name="com.john_aziz57.rss_feed.NewsItemListFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            app:layoutManager="LinearLayoutManager"
+            android:visibility="gone"
+            tools:context="com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity"
+            tools:listitem="@layout/newsitem_list_content" />
+
+        <TextView
+            android:id="@+id/no_data_textview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:visibility="gone"
+            android:text="@string/no_data_available"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="?android:attr/progressBarStyle"
+            android:indeterminate="true"
+            android:layout_gravity="center"
+            android:visibility="visible" />
+
+    </LinearLayout>
+</android.support.v4.widget.SwipeRefreshLayout>

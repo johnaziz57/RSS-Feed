@@ -17,22 +17,60 @@
     
     -->
 
-    <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:id="@+id/newsitem_list"
-        android:name="com.john_aziz57.rss_feed.NewsItemListFragment"
-        android:layout_width="@dimen/item_width"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipeContainer"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        app:layoutManager="LinearLayoutManager"
-        tools:context="com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity"
-        tools:listitem="@layout/newsitem_list_content" />
+        android:layout_weight="1">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical">
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/newsitem_list"
+                android:name="com.john_aziz57.bbctest.NewsItemListFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layoutManager="LinearLayoutManager"
+                tools:context="com.john_aziz57.bbctest.ui.activity.NewsItemListActivity"
+                tools:listitem="@layout/newsitem_list_content"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/no_data_textview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:visibility="gone"
+                android:text="@string/no_data_available"/>
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                style="?android:attr/progressBarStyle"
+                android:indeterminate="true"
+                android:visibility="visible" />
+
+        </LinearLayout>
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <TextView
+        android:id="@+id/please_select_textview"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="3"
+        android:gravity="center"
+        android:visibility="visible"
+        android:text="@string/please_select_topic"
+        android:textSize="@dimen/description_font_size"/>
 
     <FrameLayout
         android:id="@+id/newsitem_detail_container"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="3" />
+        android:layout_weight="3"
+        android:visibility="gone"/>
 
 </LinearLayout>

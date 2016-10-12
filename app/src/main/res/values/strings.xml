@@ -3,4 +3,6 @@
     <string name="title_newsitem_detail">NewsItem Detail</string>
     <!--placeholder for link textView-->
     <string name="url"><a href="http://www.google.com">Google</a></string>
+    <string name="no_data_available">No data available , Please check network connection</string>
+    <string name="please_select_topic">Please select a topic</string>
 </resources>
