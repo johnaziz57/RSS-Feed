@@ -21,6 +21,7 @@ import com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity;
  * on handsets.
  */
 public class NewsItemDetailFragment extends Fragment {
+
     /**
      * The fragment argument representing the item ID that this fragment
      * represents.
