@@ -2,4 +2,10 @@
 <resources>
     <dimen name="title_size_list_item">20sp</dimen>
     <dimen name="description_size_ist_item">15sp</dimen>
+    <!--image height in details fragment-->
+    <dimen name="max_image_detail_height">400dp</dimen>
+    <dimen name="min_image_detail_height">300dp</dimen>
+    <!--font size in details fragment-->
+    <dimen name="title_font_size">32sp</dimen>
+    <dimen name="description_font_size">26sp</dimen>
 </resources>

@@ -1,18 +1,22 @@
 package com.john_aziz57.rss_feed.ui.fragment;
 
 import android.app.Activity;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.Toolbar;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
 import com.john_aziz57.rss_feed.R;
-import com.john_aziz57.rss_feed.dummy.DummyContent;
+import com.john_aziz57.rss_feed.data.model.NewsItem;
 import com.john_aziz57.rss_feed.ui.activity.NewsItemDetailActivity;
 import com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity;
+import com.john_aziz57.rss_feed.utils.Utils;
 
 /**
  * A fragment representing a single NewsItem detail screen.
@@ -29,9 +33,9 @@ public class NewsItemDetailFragment extends Fragment {
     public static final String ARG_ITEM_ID = "item_id";
 
     /**
-     * The dummy content this fragment is presenting.
+     * The newsItem that the fragment represents
      */
-    private DummyContent.DummyItem mItem;
+    private NewsItem mNewsItem;
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -45,15 +49,13 @@ public class NewsItemDetailFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
-            // Load the dummy content specified by the fragment
-            // arguments. In a real-world scenario, use a Loader
-            // to load content from a content provider.
-            mItem = DummyContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
+
+            mNewsItem = getArguments().getParcelable(ARG_ITEM_ID);
 
             Activity activity = this.getActivity();
-            CollapsingToolbarLayout appBarLayout = (CollapsingToolbarLayout) activity.findViewById(R.id.toolbar_layout);
-            if (appBarLayout != null) {
-                appBarLayout.setTitle(mItem.content);
+            Toolbar toolbar = (Toolbar) activity.findViewById(R.id.toolbar);
+            if (toolbar!= null) {
+                toolbar.setTitle(mNewsItem.title);
             }
         }
     }
@@ -63,10 +65,24 @@ public class NewsItemDetailFragment extends Fragment {
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.newsitem_detail, container, false);
 
-        // Show the dummy content as text in a TextView.
-        if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.newsitem_detail)).setText(mItem.details);
+        if (mNewsItem != null) {
+            ((TextView) rootView.findViewById(R.id.title_textview)).setText(mNewsItem.title);
+            ((TextView) rootView.findViewById(R.id.description_textview)).setText(mNewsItem.description);
+
+            if(mNewsItem.thumbnail!=null) {
+                ImageView imageView = (ImageView) rootView.findViewById(R.id.media_imageView);
+                Glide
+                        .with(this)
+                        .load(mNewsItem.thumbnail.url)
+                        .placeholder(R.drawable.bbc_placeholder)
+                        .into(imageView);
+            }
+
+            TextView link = (TextView) rootView.findViewById(R.id.link_textview);
+            link.setText(Utils.getTheMoreLink(mNewsItem.link));
+            link.setMovementMethod(LinkMovementMethod.getInstance());
         }
+
 
         return rootView;
     }

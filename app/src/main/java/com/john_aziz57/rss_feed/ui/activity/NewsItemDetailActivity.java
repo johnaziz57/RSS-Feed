@@ -25,18 +25,9 @@ public class NewsItemDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newsitem_detail);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own detail action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
         // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -56,8 +47,8 @@ public class NewsItemDetailActivity extends AppCompatActivity {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(NewsItemDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(NewsItemDetailFragment.ARG_ITEM_ID));
+            arguments.putParcelable(NewsItemDetailFragment.ARG_ITEM_ID,
+                    getIntent().getParcelableExtra(NewsItemDetailFragment.ARG_ITEM_ID));
             NewsItemDetailFragment fragment = new NewsItemDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
