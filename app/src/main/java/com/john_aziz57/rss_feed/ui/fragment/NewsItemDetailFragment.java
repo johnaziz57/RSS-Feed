@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
@@ -53,7 +54,7 @@ public class NewsItemDetailFragment extends Fragment {
 
             mNewsItem = getArguments().getParcelable(ARG_ITEM_ID);
 
-            NewsItemDetailActivity activity = (NewsItemDetailActivity)this.getActivity();
+            AppCompatActivity activity = (AppCompatActivity)this.getActivity();
             ActionBar toolbar = activity.getSupportActionBar();
             if (toolbar!= null) {
                 toolbar.setTitle(mNewsItem.title);

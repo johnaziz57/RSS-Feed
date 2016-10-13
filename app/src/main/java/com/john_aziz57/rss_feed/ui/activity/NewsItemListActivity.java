@@ -4,6 +4,7 @@ import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -60,6 +61,8 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     private TextView mPleaseSelectTextView;
     /*swipe to refresh view for the recyclerView*/
     private SwipeRefreshLayout mSwipeContainer;
+    /*flag to indicate that a loading is started*/
+    private boolean mStartedLoading;
 
 
     @Override
@@ -82,6 +85,9 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             mTwoPane = true;
             mFrameLayout = (FrameLayout) findViewById(R.id.newsitem_detail_container);
             mPleaseSelectTextView = (TextView) findViewById(R.id.please_select_textview);
+
+            // workaround: set the view to landscape in tablet to avoid rotation problems
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
         mNoDataTextView = (TextView) findViewById(R.id.no_data_textview);
@@ -96,6 +102,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         mSwipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                if(!mStartedLoading)// not already refreshing
                 // on refresh load the data
                 loaderManager.restartLoader(RSS_ID,null,NewsItemListActivity.this).forceLoad();
             }
@@ -114,12 +121,13 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
     @Override
     public Loader<RSS> onCreateLoader(int i, Bundle bundle) {
+        mStartedLoading = true;
         return new RssTaskLoader(this);
     }
 
     @Override
     public void onLoadFinished(Loader<RSS> loader, RSS rss) {
-        // hide the progressbar
+        // hide the initial progressbar
         mProgressBar.setVisibility(View.GONE);
         // stop the refreshing sign
         mSwipeContainer.setRefreshing(false);
@@ -133,10 +141,23 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             mSimpleAdapter.addItems(rss);
             // display the list
             mRecyclerView.setVisibility(View.VISIBLE);
+
+            if(mStartedLoading)//check if started loading not just rotation
+                mRecyclerView.smoothScrollToPosition(0);// scroll back all the way to the top
         }else{
             // notify the user that we have connection problem
             mNoDataTextView.setVisibility(View.VISIBLE);
+            // hide the data
+            mRecyclerView.setVisibility(View.GONE);
+            if (mTwoPane) {
+                //hide the framelayout for the fragment
+                mFrameLayout.setVisibility(View.GONE);
+                //display the textView notice
+                mPleaseSelectTextView.setVisibility(View.VISIBLE);
+
+            }
         }
+        mStartedLoading = false;
     }
 
     @Override
@@ -177,6 +198,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if(!mStartedLoading)// not currently refreshing
                     if (mTwoPane) {
                         //hide the textView notice
                         mPleaseSelectTextView.setVisibility(View.GONE);
@@ -191,6 +213,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
                                 .replace(R.id.newsitem_detail_container, fragment)
                                 .commit();
                     } else {
+                        // start the new activity
                         Context context = v.getContext();
                         Intent intent = new Intent(context, NewsItemDetailActivity.class);
                         intent.putExtra(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
