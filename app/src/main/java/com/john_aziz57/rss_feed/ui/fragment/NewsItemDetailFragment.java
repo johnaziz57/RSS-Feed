@@ -3,6 +3,7 @@ package com.john_aziz57.rss_feed.ui.fragment;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.Toolbar;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
@@ -52,8 +53,8 @@ public class NewsItemDetailFragment extends Fragment {
 
             mNewsItem = getArguments().getParcelable(ARG_ITEM_ID);
 
-            Activity activity = this.getActivity();
-            Toolbar toolbar = (Toolbar) activity.findViewById(R.id.toolbar);
+            NewsItemDetailActivity activity = (NewsItemDetailActivity)this.getActivity();
+            ActionBar toolbar = activity.getSupportActionBar();
             if (toolbar!= null) {
                 toolbar.setTitle(mNewsItem.title);
             }
