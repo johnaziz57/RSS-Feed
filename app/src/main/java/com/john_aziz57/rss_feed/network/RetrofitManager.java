@@ -18,7 +18,7 @@ public class RetrofitManager {
         if(retrofit == null){
             retrofit = new Retrofit.Builder()
                     /*RSS url*/
-                    .baseUrl(RssService.RSS_URL)
+                    .baseUrl(RssRetrofitService.RSS_URL)
                     .client(new OkHttpClient())
                     /*Adding XML converter*/
                     .addConverterFactory(SimpleXmlConverterFactory.create())

@@ -9,7 +9,7 @@ import retrofit2.http.GET;
  * Created by John on 11-Oct-16.
  */
 
-public interface RssService {
+public interface RssRetrofitService {
     String RSS_URL = "http://feeds.bbci.co.uk/news/";
 
     @GET("rss.xml")

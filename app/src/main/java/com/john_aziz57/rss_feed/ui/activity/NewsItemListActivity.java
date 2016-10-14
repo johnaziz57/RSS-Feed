@@ -1,11 +1,15 @@
 package com.john_aziz57.rss_feed.ui.activity;
 
-import android.app.LoaderManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.content.Loader;
-import android.content.res.Configuration;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -20,9 +24,9 @@ import android.widget.TextView;
 
 
 import com.bumptech.glide.Glide;
-import com.john_aziz57.rss_feed.data.loader.RssTaskLoader;
 import com.john_aziz57.rss_feed.data.model.NewsItem;
 import com.john_aziz57.rss_feed.data.model.RSS;
+import com.john_aziz57.rss_feed.data.service.RssService;
 import com.john_aziz57.rss_feed.ui.fragment.NewsItemDetailFragment;
 import com.john_aziz57.rss_feed.R;
 
@@ -37,10 +41,8 @@ import java.util.List;
  * item details. On tablets, the activity presents the list of items and
  * item details side-by-side using two vertical panes.
  */
-public class NewsItemListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<RSS>{
+public class NewsItemListActivity extends AppCompatActivity {
 
-    /*loader ID*/
-    private static final int RSS_ID=1;
     /*Current NewsItem key for restoring state*/
     private static final String CURRENT_TOPIC_KEY = "CURRENT_TOPIC";
 
@@ -48,7 +50,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
-    private boolean mTwoPane;
+    private boolean mDualPane;
     /*SimpleAdapter of RecyvlerView reference to dynamically add items to it and refresh the view*/
     private SimpleItemRecyclerViewAdapter mSimpleAdapter;
     private RecyclerView mRecyclerView;
@@ -67,6 +69,10 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
 
     private NewsItem mLastSelectedNewsItem =null;
 
+    private ResponseReceiver mResponseReceiver;
+
+    private RssService mBoundService;
+    private boolean mIsBound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,25 +86,16 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         mRecyclerView = (RecyclerView)findViewById(R.id.newsitem_list);
         assert mRecyclerView  != null;
         setupRecyclerView( mRecyclerView );
+
+        /*check if using dual pane view*/
         if (findViewById(R.id.newsitem_detail_container) != null) {
-            // The detail container view will be present only in the
-            // large-screen layouts (res/values-w900dp).
-            // If this view is present, then the
-            // activity should be in two-pane mode.
-            mTwoPane = true;
+            mDualPane = true;
             mFrameLayout = (FrameLayout) findViewById(R.id.newsitem_detail_container);
             mPleaseSelectTextView = (TextView) findViewById(R.id.please_select_textview);
-
-            // workaround: set the view to landscape in tablet to avoid rotation problems
-            //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
         mNoDataTextView = (TextView) findViewById(R.id.no_data_textview);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-
-        final LoaderManager loaderManager = getLoaderManager();
-        // start the loader to fetch data
-        loaderManager.initLoader(RSS_ID,null,this).forceLoad();
 
         //setup swipe to refresh container
         mSwipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
@@ -106,15 +103,22 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             @Override
             public void onRefresh() {
                 if(!mStartedLoading)// not already refreshing
-                // on refresh load the data
-                loaderManager.restartLoader(RSS_ID,null,NewsItemListActivity.this).forceLoad();
+                    mBoundService.requestData(true);
+                mStartedLoading = true;
             }
         });
 
         mSwipeContainer.setColorSchemeResources(R.color.colorPrimary,R.color.colorPrimaryDark,R.color.colorAccent);
-
         // disable swipe to refresh because we are already loading the data, don't refresh
         mSwipeContainer.setEnabled(false);
+
+        Intent serviceIntent = new Intent(this,RssService.class);
+        startService(serviceIntent);
+        doBindService();
+        IntentFilter mStatusIntentFilter = new IntentFilter(RssService.RESULT_DATA);
+        mResponseReceiver = new ResponseReceiver();
+        // Registers the DownloadStateReceiver and its intent filters
+        LocalBroadcastManager.getInstance(this).registerReceiver(mResponseReceiver,mStatusIntentFilter);
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
@@ -122,50 +126,6 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         recyclerView.setAdapter(mSimpleAdapter);
     }
 
-    @Override
-    public Loader<RSS> onCreateLoader(int i, Bundle bundle) {
-        mStartedLoading = true;
-        return new RssTaskLoader(this);
-    }
-
-    @Override
-    public void onLoadFinished(Loader<RSS> loader, RSS rss) {
-        // hide the initial progressbar
-        mProgressBar.setVisibility(View.GONE);
-        // stop the refreshing sign
-        mSwipeContainer.setRefreshing(false);
-        //allow swipe to refresh
-        mSwipeContainer.setEnabled(true);
-
-        if(rss!=null){
-            // clear all the old data
-            mSimpleAdapter.clear();
-            // add the new data
-            mSimpleAdapter.addItems(rss);
-            // display the list
-            mRecyclerView.setVisibility(View.VISIBLE);
-
-            if(mStartedLoading)//check if started loading not just rotation
-                mRecyclerView.smoothScrollToPosition(0);// scroll back all the way to the top
-        }else{
-            // notify the user that we have connection problem
-            mNoDataTextView.setVisibility(View.VISIBLE);
-            // hide the data
-            mRecyclerView.setVisibility(View.GONE);
-            if (mTwoPane) {
-                //hide the framelayout for the fragment
-                mFrameLayout.setVisibility(View.GONE);
-                //display the textView notice
-                mPleaseSelectTextView.setVisibility(View.VISIBLE);
-
-            }
-        }
-        mStartedLoading = false;
-    }
-
-    @Override
-    public void onLoaderReset(Loader<RSS> loader) {
-    }
 
     @Override
     public void onSaveInstanceState(Bundle outState) {
@@ -180,7 +140,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         if(savedInstanceState.containsKey(CURRENT_TOPIC_KEY)){
             mLastSelectedNewsItem = savedInstanceState.getParcelable(CURRENT_TOPIC_KEY);
             /*if is in dual pane state open the NewsItem in the other fragment*/
-            if (mTwoPane) {
+            if (mDualPane) {
                 openFragmentInDualPane(mLastSelectedNewsItem);
             }
         }
@@ -244,7 +204,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
                 public void onClick(View v) {
                     if(!mStartedLoading) {// not currently refreshing
                         mLastSelectedNewsItem = newsItem;
-                        if (mTwoPane) {
+                        if (mDualPane) {
                             openFragmentInDualPane(newsItem);
                         } else {
                             openFragmentInActivity(newsItem);
@@ -278,10 +238,10 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
-            public final View mView;
-            public final TextView mTitleView;// news title
-            public final TextView mPubDateView;// publish date
-            public final ImageView mImageView; // Image associated with the news
+            final View mView;
+            final TextView mTitleView;// news title
+            final TextView mPubDateView;// publish date
+            final ImageView mImageView; // Image associated with the news
 
             public ViewHolder(View view) {
                 super(view);
@@ -295,4 +255,86 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             }
         }
     }
+
+    //////////////////////// service
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            mBoundService = ((RssService.LocalBinder)service).getService();
+            mBoundService.requestData(false);
+            mStartedLoading = true;
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mBoundService = null;
+        }
+    };
+
+    void doBindService() {
+        bindService(new Intent(this,RssService.class), mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+    }
+
+    void doUnbindService() {
+        if (mIsBound) {
+            // Detach our existing connection.
+            unbindService(mConnection);
+            mIsBound = false;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        doUnbindService();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mResponseReceiver);
+    }
+
+    private class ResponseReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            RSS rss = intent.getParcelableExtra(RssService.RESULT_DATA);
+            onLoadFinish(rss);
+        }
+    }
+
+    /**
+     * Change the view according to the return result from the service
+     * if rss parameter is null will display no connection
+     * else will display proper data
+     * @param rss
+     */
+    void onLoadFinish(RSS rss){
+        // hide the initial progressbar
+        mProgressBar.setVisibility(View.GONE);
+        // stop the refreshing sign
+        mSwipeContainer.setRefreshing(false);
+        //allow swipe to refresh
+        mSwipeContainer.setEnabled(true);
+
+        if(rss!=null){
+            // clear all the old data
+            mSimpleAdapter.clear();
+            // add the new data
+            mSimpleAdapter.addItems(rss);
+            // display the list
+            mRecyclerView.setVisibility(View.VISIBLE);
+
+            if(mStartedLoading)//check if started loading not just rotation
+                mRecyclerView.smoothScrollToPosition(0);// scroll back all the way to the top
+        }else{
+            // notify the user that we have connection problem
+            mNoDataTextView.setVisibility(View.VISIBLE);
+            // hide the data
+            mRecyclerView.setVisibility(View.GONE);
+            if (mDualPane) {
+                //hide the framelayout for the fragment
+                mFrameLayout.setVisibility(View.GONE);
+                //display the textView notice
+                mPleaseSelectTextView.setVisibility(View.VISIBLE);
+
+            }
+        }
+        mStartedLoading = false;
+    }
+
 }

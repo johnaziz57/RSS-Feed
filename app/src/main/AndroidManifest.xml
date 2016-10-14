@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.john_aziz57.rss_feed">
-    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -20,14 +22,20 @@
         </activity>
         <activity
             android:name=".ui.activity.NewsItemDetailActivity"
+            android:configChanges="orientation|screenSize"
             android:label="@string/title_newsitem_detail"
             android:parentActivityName=".ui.activity.NewsItemListActivity"
-            android:configChanges="orientation|screenSize"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.john_aziz57.rss_feed.ui.activity.NewsItemListActivity" />
         </activity>
+
+        <service
+            android:name=".data.service.RssService"
+            android:enabled="true"
+            android:stopWithTask="true"
+            android:exported="true"></service>
     </application>
 
 </manifest>
