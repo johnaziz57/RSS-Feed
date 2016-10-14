@@ -1,10 +1,9 @@
 package com.john_aziz57.rss_feed.ui.activity;
 
 import android.app.LoaderManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
-import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -14,7 +13,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -41,12 +39,15 @@ import java.util.List;
  */
 public class NewsItemListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<RSS>{
 
+    /*loader ID*/
+    private static final int RSS_ID=1;
+    /*Current NewsItem key for restoring state*/
+    private static final String CURRENT_TOPIC_KEY = "CURRENT_TOPIC";
+
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
      * device.
      */
-    private static final int RSS_ID=1;
-
     private boolean mTwoPane;
     /*SimpleAdapter of RecyvlerView reference to dynamically add items to it and refresh the view*/
     private SimpleItemRecyclerViewAdapter mSimpleAdapter;
@@ -63,6 +64,8 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     private SwipeRefreshLayout mSwipeContainer;
     /*flag to indicate that a loading is started*/
     private boolean mStartedLoading;
+
+    private NewsItem mLastSelectedNewsItem =null;
 
 
     @Override
@@ -87,7 +90,7 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             mPleaseSelectTextView = (TextView) findViewById(R.id.please_select_textview);
 
             // workaround: set the view to landscape in tablet to avoid rotation problems
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         }
 
         mNoDataTextView = (TextView) findViewById(R.id.no_data_textview);
@@ -164,6 +167,47 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
     public void onLoaderReset(Loader<RSS> loader) {
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if(mLastSelectedNewsItem !=null)
+            outState.putParcelable(CURRENT_TOPIC_KEY, mLastSelectedNewsItem);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if(savedInstanceState.containsKey(CURRENT_TOPIC_KEY)){
+            mLastSelectedNewsItem = savedInstanceState.getParcelable(CURRENT_TOPIC_KEY);
+            /*if is in dual pane state open the NewsItem in the other fragment*/
+            if (mTwoPane) {
+                openFragmentInDualPane(mLastSelectedNewsItem);
+            }
+        }
+    }
+
+    public void openFragmentInDualPane (NewsItem newsItem){
+        //hide the textView notice
+        mPleaseSelectTextView.setVisibility(View.GONE);
+        //display the framelayout for the fragment
+        mFrameLayout.setVisibility(View.VISIBLE);
+
+        Bundle arguments = new Bundle();
+        arguments.putParcelable(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
+        NewsItemDetailFragment fragment = new NewsItemDetailFragment();
+        fragment.setArguments(arguments);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.newsitem_detail_container, fragment)
+                .commit();
+    }
+
+    public void openFragmentInActivity(NewsItem newsItem){
+        // start the new activity
+        Intent intent = new Intent(this, NewsItemDetailActivity.class);
+        intent.putExtra(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
+        startActivity(intent);
+    }
+
     public class SimpleItemRecyclerViewAdapter
             extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
 
@@ -198,27 +242,13 @@ public class NewsItemListActivity extends AppCompatActivity implements LoaderMan
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(!mStartedLoading)// not currently refreshing
-                    if (mTwoPane) {
-                        //hide the textView notice
-                        mPleaseSelectTextView.setVisibility(View.GONE);
-                        //display the framelayout for the fragment
-                        mFrameLayout.setVisibility(View.VISIBLE);
-
-                        Bundle arguments = new Bundle();
-                        arguments.putParcelable(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
-                        NewsItemDetailFragment fragment = new NewsItemDetailFragment();
-                        fragment.setArguments(arguments);
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.newsitem_detail_container, fragment)
-                                .commit();
-                    } else {
-                        // start the new activity
-                        Context context = v.getContext();
-                        Intent intent = new Intent(context, NewsItemDetailActivity.class);
-                        intent.putExtra(NewsItemDetailFragment.ARG_ITEM_ID, newsItem);
-
-                        context.startActivity(intent);
+                    if(!mStartedLoading) {// not currently refreshing
+                        mLastSelectedNewsItem = newsItem;
+                        if (mTwoPane) {
+                            openFragmentInDualPane(newsItem);
+                        } else {
+                            openFragmentInActivity(newsItem);
+                        }
                     }
                 }
             });

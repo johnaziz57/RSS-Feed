@@ -22,6 +22,7 @@
             android:name=".ui.activity.NewsItemDetailActivity"
             android:label="@string/title_newsitem_detail"
             android:parentActivityName=".ui.activity.NewsItemListActivity"
+            android:configChanges="orientation|screenSize"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
